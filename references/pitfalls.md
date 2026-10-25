@@ -69,6 +69,8 @@
 | `Start-Process` 报「已添加项。字典中的关键字:"NO_PROXY"」 | 环境变量大小写重复 | 改用 `Start-Job` 里跑 `& renpy.exe <project> *>&1 > out.txt` |
 | 终端里中文全是乱码 | pwsh 控制台按 cp936 解 UTF-8 输出 | 用 read 工具看文件；Python 侧设 `PYTHONIOENCODING=utf-8` |
 | 改脚本后读旧档报 `Could not find return label` | Ren'Py 存档绑定脚本位置哈希 | 不是代码 bug，新开档；在报告里说明，别当缺陷追 |
+| 用 PowerShell 调 GitHub API 建仓库，描述里中文全变成 `?` | `ConvertTo-Json` 产出 UTF-16 字符串，`Invoke-RestMethod -Body` 按单字节编码发出 | 先 `[Text.Encoding]::UTF8.GetBytes($json)` 再用 `-Body $bytes -ContentType 'application/json; charset=utf-8'`；发完用 API 读回来核对 |
+| 无头环境里 `set_mouse_pos` + `queue_event("mousedown_1")` 打不中屏幕按钮，截图前后逐像素相同 | dummy 视频驱动下没有真实指针命中测试 | 点击类交互只能实机验；无头验证改走 `Function(...)`/`renpy.call_in_new_context` 直接调动作，别伪造鼠标 |
 
 ### 六、界面层
 
@@ -84,6 +86,20 @@
 | 图鉴的上一页/下一页点了没反应（退出按钮却正常） | 按钮在被 `use` 嵌进去的屏幕里，`SetScreenVariable` 写的是当前屏幕 scope，`default` 又挂在被 use 的那层，父屏一重算就回到 0 | 翻页状态放 store（`default ns_gal_page_index = {...}` + `Function`），别跨 `use` 用屏幕变量；顺手加 `key "K_LEFT"/"K_RIGHT"` 与滚轮 |
 | 图鉴页码和美术叠在一起 | 原作把 "Page N/3" 画在每页的背景图里（`cgm cgmode_bgN`） | 只在背景走 fallback 时才自己画页码 |
 
+### 七、打包与发布层
+
+| 症状 | 根因 | 解法 |
+|---|---|---|
+| 双击 exe 弹一个 traceback 的 txt，游戏起不来：`PermissionError: ...\RenPy\tokens\upgraded.txt` | 存档根目录不可写；`tokens` 与存档**共用同一个根**（`savetoken.py:301`），不是「tokens 这个文件特殊」 | 包根放空目录 `Ren'Py Data`（`renpy.py:176-187` 逐级向上找），或发 `RENPY_PATH_TO_SAVES=%~dp0saves` 的启动 bat；别指望用户去改 `%APPDATA%` 权限 |
+| `launcher distribute` 直接 exit 1，没有任何像样的报错 | 打包器本身就是 Ren'Py 进程，撞同一个 `%APPDATA%` 不可写 | 构建前 `$env:APPDATA='<可写目录>'` |
+| 包里冒出 `walk_report.json`、`assets_convert_report.md`、`traceback.txt` | 只排除了 `game/saves` 和 `game/cache` | `options.rpy` 的 `init python` 里 `build.classify('*.txt'/'*.log'/'*.md'/'*.json', None)`（这些 pattern 只匹配工程根，不会误伤 `game/` 内部） |
+| 想给 Mac 用户发包，Windows 上打出来没有 `.app` | `--package pc` 只含 win + linux 运行时 | mac 包必须在 macOS 上打；`lib/` 里只有 `py3-windows-x86_64`、`py3-linux-x86_64` |
+| 手动删了 `game/cache`，但包里又出现了 | 打包器会自己生成 `cache/bytecode-312.rpyb` + `cache/build_info.json`（玩家端免编译） | 不用管；你排除的是开发期的 `py3analysis.rpyb` / `screens.rpyb` / `shaders.txt` |
+| 玩家互相给存档，读进来弹「This save was created on a different device」 | 每台机器首次运行各自生成一把签名密钥 | 预置固定 `tokens/security_keys.txt`（生成一次、随包发），玩家端 `init_tokens()` 读到已有密钥就不再生成；代价是私钥公开、可伪造签名 |
+| 收包人双击 exe 被 SmartScreen 拦住 | exe 没有代码签名 | 正常现象，让对方「更多信息 → 仍要运行」；要消掉得买证书 |
+
 ### 补坑流程
 
 新踩的坑按上面的层补一行，并且尽量同时做三件事：能机器查的补一个 lint 码（`NS0xx`）、能运行期兜底的补进 `ns_stage.rpy`、能写进契约的写进 `references/assets_contract.md`。只写在对话里，下个工程会原样再踩一遍。
+
+打包层的坑没有 lint 可用，就在 `references/packaging.md` 里同步一段「为什么」，免得下个人以为是环境偶发故障。

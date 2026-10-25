@@ -24,7 +24,7 @@
 | [references/system_features.md](references/system_features.md) | 存读档/跳过/鉴赏等系统功能 |
 | [references/blueprint-templates.md](references/blueprint-templates.md) | 建蓝图、写任务包时 |
 | [references/repair-playbook.md](references/repair-playbook.md) | 出错返工时 |
-| [references/pitfalls.md](references/pitfalls.md) | **开工前必读**：六类 30+ 条「症状 → 根因 → 解法」 |
+| [references/pitfalls.md](references/pitfalls.md) | **开工前必读**：七类 51 条「症状 → 根因 → 解法」（素材/演出/剧情/验证/环境/界面/打包） |
 | [references/packaging.md](references/packaging.md) | 打发布包时 |
 
 ### 当脚本工具集用

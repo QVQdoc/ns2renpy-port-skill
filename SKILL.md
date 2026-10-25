@@ -301,7 +301,7 @@ lint_pass / runtime_tested / validated / blocked:<issue_id>
 ## 两处细节放在 references 里
 
 - 打包发布（distribute 命令、mac 限制、存档根不可写、构建前设 APPDATA）：`references/packaging.md`
-- 实测踩坑清单（六类 30+ 条「症状 → 根因 → 解法」，含四条通用判据）：`references/pitfalls.md`
+- 实测踩坑清单（七类 51 条「症状 → 根因 → 解法」，含四条通用判据与打包发布层）：`references/pitfalls.md`
 
 ## 随附文档
 
