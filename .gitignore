@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.rpyc
+*.rpyb
+.venv/
+venv/
+dist/
+build/
+*.zip
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
