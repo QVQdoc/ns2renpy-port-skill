@@ -54,3 +54,22 @@ $env:APPDATA='<可写目录>'; $env:SDL_AUDIODRIVER='dummy'; $env:RENPY_SKIP_SPL
 Start-Process .\serika.exe
 # 看 log.txt 里出现 "Initializing gl2 renderer" + "Screen sizes: virtual=(800, 600)" 即起得来
 ```
+
+### 允许玩家之间分享存档（预置签名密钥）
+
+Ren'Py 会给每个存档签名，用的密钥在存档根下的 `tokens/security_keys.txt`（`renpy/savetoken.py` 的 `create_token()`：`ecdsa.SigningKey.generate(curve=NIST256p)`，写成一行 `signing-key <私钥DER> <公钥DER>`）。首次启动时**每台机器各自生成一把**，于是别人的存档拿过来读会弹：
+
+> This save was created on a different device. Maliciously constructed save files can harm your computer. Do you trust this save's creator?
+
+玩家两边都点「信任」也能过，但很烦。要让存档**开箱即共享**，就在包里预置一份固定密钥：
+
+1. 随便找一台机器首次跑一次游戏（或跑一次 `renpy.exe <project> lint`，指向一个可写的 `RENPY_PATH_TO_SAVES`），让它生成 `tokens/security_keys.txt`；
+2. 把这份文件放进工程的 `Ren'Py Data/tokens/security_keys.txt`（随包发布），内容只有一行 `signing-key ...`；
+3. 重打包。玩家端 `init_tokens()` 读到 `signing_keys` 非空就不再生成新密钥，所有包共用同一把。
+
+验证：解压新包直接运行，比对 `Ren'Py Data/tokens/security_keys.txt` 的 SHA256 与源文件一致、行数仍为 1（文件头会多出 `upgraded.txt`，那是另一回事）。
+
+代价：私钥随包公开，任何人可以伪造这个游戏的存档签名。对同人/汉化发布通常可接受；要是把存档签名当防作弊手段，就别预置。
+
+附带好处：存档跟着 `Ren'Py Data/` 走，玩家把整个游戏目录拷到另一台机器，存档一起过去。
+
