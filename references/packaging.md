@@ -37,7 +37,7 @@ init python:
 - **Windows SmartScreen 一定拦**（exe 未签名），让收包人「更多信息 → 仍要运行」，或者用代码签名证书；这不是打包出错。
 - 存档在 `%APPDATA%\RenPy\<config.save_directory>`，不是游戏目录，所以升级版本不丢档。
 
-### 两个只在别人机器上才会遇到的坑
+### 三个只在别人机器上才会遇到的坑
 
 - **`%APPDATA%\RenPy\tokens\upgraded.txt` 打不开**：双击 exe 弹一个 traceback 的 txt，内容是 `PermissionError: [Errno 13] Permission denied`，位置 `renpy/savetoken.py:260 with open(upgraded_txt, "a")`。这一条不是"权限坏了"的偶发问题，而是**存档根目录不可写**，`tokens` 与存档共用同一个根（`savetoken.py:301 token_dir = renpy.__main__.path_to_saves(gamedir, "tokens")`）。三种解法，按侵入性从低到高：
   1. 包根放一个空文件夹 **`Ren'Py Data`**（零点击，推荐给最终用户）：`renpy.py:176-187` 会从 `config.renpy_base` 逐级向上找这个名字的目录，找到就把存档根换过去。实测把 `Ren'Py Data\` 放进 `serika-1.0-pc\` 后，双击 `serika.exe` 即在 `<包>\Ren'Py Data\` 下生成 `serika-ns-port-1.0\` 与 `tokens\`，不再碰 `%APPDATA%`。
